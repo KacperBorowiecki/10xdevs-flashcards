@@ -22,6 +22,19 @@ class PaginatedResponse(BaseModel, Generic[T]):
     size: int
     pages: int
 
+# --- Modele dla komunikacji z LLM ---
+
+class LLMFlashcardSuggestion(BaseModel):
+    """Model reprezentujący pojedynczą sugestię fiszki z LLM."""
+    front_content: str = Field(..., description="Front content of the suggested flashcard")
+    back_content: str = Field(..., description="Back content of the suggested flashcard")
+
+class LLMGenerateResponse(BaseModel):
+    """Model odpowiedzi z LLM."""
+    flashcards: List[LLMFlashcardSuggestion] = Field(..., description="List of generated flashcard suggestions")
+    model_used: str = Field(..., description="Name of the LLM model used")
+    cost: Optional[float] = Field(None, description="Cost of the LLM request in USD")
+
 # --- Modele dla zasobu Flashcards ---
 
 class FlashcardManualCreateRequest(BaseModel):
@@ -31,8 +44,7 @@ class FlashcardManualCreateRequest(BaseModel):
 class FlashcardResponse(FlashcardBase):
     # Dziedziczy wszystkie pola z FlashcardBase (id, user_id, source_text_id, front_content, back_content, source, status, created_at, updated_at)
     # To jest zgodne z większością odpowiedzi dla fiszek w api-plan.md
-    class Config:
-        orm_mode = True # lub from_attributes = True dla Pydantic v2+
+    model_config = {"from_attributes": True}
 
 class FlashcardPatchRequest(BaseModel):
     front_content: Optional[str] = Field(None, max_length=500, description="Optional new front content.")
@@ -54,8 +66,7 @@ class AIGenerateFlashcardsResponse(BaseModel):
 
 class AIGenerationEventResponse(AiGenerationEventBase):
     # Dziedziczy wszystkie pola z AiGenerationEventBase
-    class Config:
-        orm_mode = True # lub from_attributes = True dla Pydantic v2+
+    model_config = {"from_attributes": True}
 
 # --- Modele dla zasobu Spaced Repetition ---
 
@@ -74,8 +85,7 @@ class SubmitReviewRequest(BaseModel):
 
 class SpacedRepetitionRecordResponse(UserFlashcardSpacedRepetitionBase):
     # Dziedziczy wszystkie pola z UserFlashcardSpacedRepetitionBase
-    class Config:
-        orm_mode = True # lub from_attributes = True dla Pydantic v2+
+    model_config = {"from_attributes": True}
 
 # Przykładowe użycie (można usunąć lub zakomentować)
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 from supabase import create_client, Client
-from src.core.config import settings  # Importujemy nasze skonfigurowane ustawienia
+from src.core.config import Settings  # Importujemy klasę Settings
+
+# Tworzymy instancję ustawień
+settings = Settings()
 
 # Przechowujemy URL i klucz w zmiennych dla czytelności
 supabase_url: str = settings.SUPABASE_URL

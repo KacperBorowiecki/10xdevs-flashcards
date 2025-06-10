@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Any, Dict
 from enum import Enum
 from datetime import datetime
@@ -28,8 +28,7 @@ class AiGenerationEventBase(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        orm_mode = True # or from_attributes = True for Pydantic v2
+    model_config = ConfigDict(from_attributes=True)
 
 class FlashcardBase(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -42,8 +41,7 @@ class FlashcardBase(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        orm_mode = True # or from_attributes = True for Pydantic v2
+    model_config = ConfigDict(from_attributes=True)
 
 class SourceTextBase(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -52,8 +50,7 @@ class SourceTextBase(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        orm_mode = True # or from_attributes = True for Pydantic v2
+    model_config = ConfigDict(from_attributes=True)
 
 class UserFlashcardSpacedRepetitionBase(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -66,8 +63,7 @@ class UserFlashcardSpacedRepetitionBase(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        orm_mode = True # or from_attributes = True for Pydantic v2
+    model_config = ConfigDict(from_attributes=True)
 
 # Create Models (from Insert types)
 # These models are for data validation when creating new records
@@ -97,7 +93,7 @@ class UserFlashcardSpacedRepetitionCreate(BaseModel):
     user_id: uuid.UUID
     flashcard_id: uuid.UUID
     due_date: datetime
-    current_interval: int = 0
+    current_interval: int = 1
     last_reviewed_at: Optional[datetime] = None
     data_extra: Optional[Dict[str, Any]] = None
 
