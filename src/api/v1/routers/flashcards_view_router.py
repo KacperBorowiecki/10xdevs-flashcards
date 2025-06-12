@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 
 from supabase import Client
 from src.db.supabase_client import get_supabase_client
+from src.api.v1.routers.ai_router import get_authenticated_supabase_client
 from src.services.auth_service import AuthService
 from src.services.flashcard_service import FlashcardService
 from src.api.v1.schemas.flashcard_schemas import (
@@ -29,9 +30,10 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 def get_flashcard_service_dependency(
-    supabase: Client = Depends(get_supabase_client)
+    request: Request,
+    supabase: Client = Depends(get_authenticated_supabase_client)
 ) -> FlashcardService:
-    """Dependency to get FlashcardService instance."""
+    """Dependency to get FlashcardService instance with authenticated client."""
     return FlashcardService(supabase)
 
 async def require_auth(

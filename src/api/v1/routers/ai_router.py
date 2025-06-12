@@ -18,8 +18,8 @@ from src.api.v1.schemas.ai_schemas import PaginatedAiGenerationStatsResponse
 
 logger = logging.getLogger(__name__)
 
-# Import utility functions from flashcards router for consistency
-from src.api.v1.routers.flashcards import (
+# Import utility functions from shared utils module
+from src.api.v1.routers.utils import (
     add_security_headers,
     check_rate_limit,
     validate_request_integrity,
