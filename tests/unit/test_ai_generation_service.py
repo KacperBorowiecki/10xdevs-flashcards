@@ -1,11 +1,15 @@
-import pytest
 import uuid
-from unittest.mock import Mock, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock
 
-from src.services.ai_generation_service import AiGenerationService, AiGenerationServiceError
+import pytest
+
 from src.api.v1.schemas.ai_schemas import PaginatedAiGenerationStatsResponse
 from src.db.schemas import AiGenerationEvent
+from src.services.ai_generation_service import (
+    AiGenerationService,
+    AiGenerationServiceError,
+)
 
 
 class TestAiGenerationServiceGetUserGenerationStats:
@@ -27,7 +31,7 @@ class TestAiGenerationServiceGetUserGenerationStats:
                 "llm_model_used": "gpt-3.5-turbo",
                 "cost": 0.0015,
                 "created_at": "2024-01-01T00:00:00.000Z",
-                "updated_at": "2024-01-01T00:00:00.000Z"
+                "updated_at": "2024-01-01T00:00:00.000Z",
             },
             {
                 "id": str(uuid.uuid4()),
@@ -39,8 +43,8 @@ class TestAiGenerationServiceGetUserGenerationStats:
                 "llm_model_used": "claude-3-haiku",
                 "cost": 0.0008,
                 "created_at": "2024-01-01T01:00:00.000Z",
-                "updated_at": "2024-01-01T01:00:00.000Z"
-            }
+                "updated_at": "2024-01-01T01:00:00.000Z",
+            },
         ]
 
     @pytest.mark.asyncio
@@ -48,28 +52,32 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test getting AI generation stats with default parameters."""
         # Arrange
         page, size = 1, 20
-        
+
         # Mock count response
         mock_count_response = Mock()
         mock_count_response.count = 2
-        
-        # Mock data response  
+
+        # Mock data response
         mock_data_response = Mock()
         mock_data_response.data = self.sample_events
-        
+
         # Setup method chaining for count query
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        
+
         # First call: count query
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+
         # Second call: data query
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         assert isinstance(result, PaginatedAiGenerationStatsResponse)
         assert result.total == 2
@@ -85,22 +93,26 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test AI generation stats with pagination."""
         # Arrange
         page, size = 2, 5
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 12  # Total of 12 events
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []  # Empty page 2 result
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         assert result.total == 12
         assert result.page == 2
@@ -113,22 +125,26 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test handling empty AI generation stats result."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 0
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         assert result.total == 0
         assert result.page == 1
@@ -141,22 +157,26 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test handling None count from Supabase."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = None  # Supabase sometimes returns None
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         assert result.total == 0  # Should default to 0 when None
         assert result.pages == 1
@@ -168,24 +188,28 @@ class TestAiGenerationServiceGetUserGenerationStats:
         page, size = 3, 10
         expected_offset = (page - 1) * size  # 20
         expected_end = expected_offset + size - 1  # 29
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 50
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining with verification
         mock_table = Mock()
         mock_range = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value = mock_range
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value = (
+            mock_range
+        )
         mock_range.execute.return_value = mock_data_response
-        
+
         # Act
         await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert - verify range() was called with correct parameters
         mock_table.select.return_value.eq.return_value.order.return_value.range.assert_called_with(
             expected_offset, expected_end
@@ -196,48 +220,56 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test that user_id is properly converted to string for Supabase."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 0
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining with verification
         mock_table = Mock()
         mock_eq = Mock()
         self.mock_supabase.table.return_value = mock_table
         mock_table.select.return_value.eq.return_value = mock_eq
         mock_eq.execute.return_value = mock_count_response
-        mock_eq.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_eq.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert - verify eq() was called with string version of user_id
-        mock_table.select.return_value.eq.assert_called_with("user_id", str(self.user_id))
+        mock_table.select.return_value.eq.assert_called_with(
+            "user_id", str(self.user_id)
+        )
 
     @pytest.mark.asyncio
     async def test_get_user_generation_stats_model_conversion(self):
         """Test proper conversion of database records to Pydantic models."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 1
-        
+
         mock_data_response = Mock()
         mock_data_response.data = [self.sample_events[0]]
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         assert len(result.items) == 1
         event = result.items[0]
@@ -253,14 +285,14 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test handling count query database error."""
         # Arrange
         page, size = 1, 20
-        
+
         # Mock database error on count query
         self.mock_supabase.table.side_effect = Exception("Database connection error")
-        
+
         # Act & Assert
         with pytest.raises(AiGenerationServiceError) as exc_info:
             await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         assert exc_info.value.operation == "get_user_generation_stats"
         assert "Database query failed" in exc_info.value.details
         assert "Database connection error" in exc_info.value.details
@@ -270,24 +302,28 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test handling data query database error."""
         # Arrange
         page, size = 1, 20
-        
+
         # Mock successful count but failed data query
         mock_count_response = Mock()
         mock_count_response.count = 5
-        
+
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        
+
         # Count query succeeds
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+
         # Data query fails
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.side_effect = Exception("Query timeout")
-        
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.side_effect = Exception(
+            "Query timeout"
+        )
+
         # Act & Assert
         with pytest.raises(AiGenerationServiceError) as exc_info:
             await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         assert exc_info.value.operation == "get_user_generation_stats"
         assert "Database query failed" in exc_info.value.details
         assert "Query timeout" in exc_info.value.details
@@ -297,7 +333,7 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test handling Pydantic model validation errors."""
         # Arrange
         page, size = 1, 20
-        
+
         # Invalid data that will cause Pydantic validation to fail
         invalid_event = {
             "id": "invalid-uuid",  # Invalid UUID format
@@ -309,25 +345,29 @@ class TestAiGenerationServiceGetUserGenerationStats:
             "llm_model_used": "gpt-3.5-turbo",
             "cost": 0.0015,
             "created_at": "2024-01-01T00:00:00.000Z",
-            "updated_at": "2024-01-01T00:00:00.000Z"
+            "updated_at": "2024-01-01T00:00:00.000Z",
         }
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 1
-        
+
         mock_data_response = Mock()
         mock_data_response.data = [invalid_event]
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act & Assert
         with pytest.raises(AiGenerationServiceError) as exc_info:
             await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         assert exc_info.value.operation == "get_user_generation_stats"
         assert "Database query failed" in exc_info.value.details
 
@@ -336,22 +376,26 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test edge case where size calculation results in zero pages."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 0
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         result = await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert - should default to 1 page even with 0 total
         assert result.pages == 1
 
@@ -360,28 +404,34 @@ class TestAiGenerationServiceGetUserGenerationStats:
         """Test that correct table and query methods are called."""
         # Arrange
         page, size = 1, 20
-        
+
         mock_count_response = Mock()
         mock_count_response.count = 0
-        
+
         mock_data_response = Mock()
         mock_data_response.data = []
-        
+
         # Setup method chaining
         mock_table = Mock()
         self.mock_supabase.table.return_value = mock_table
-        mock_table.select.return_value.eq.return_value.execute.return_value = mock_count_response
-        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = mock_data_response
-        
+        mock_table.select.return_value.eq.return_value.execute.return_value = (
+            mock_count_response
+        )
+        mock_table.select.return_value.eq.return_value.order.return_value.range.return_value.execute.return_value = (
+            mock_data_response
+        )
+
         # Act
         await self.service.get_user_generation_stats(self.user_id, page, size)
-        
+
         # Assert
         # Verify table() was called with correct table name
         self.mock_supabase.table.assert_called_with("ai_generation_events")
-        
+
         # Verify order() was called with correct parameters for data query
-        mock_table.select.return_value.eq.return_value.order.assert_called_with("created_at", desc=True)
+        mock_table.select.return_value.eq.return_value.order.assert_called_with(
+            "created_at", desc=True
+        )
 
 
 class TestAiGenerationServiceInitialization:
@@ -391,10 +441,10 @@ class TestAiGenerationServiceInitialization:
         """Test proper service initialization."""
         # Arrange
         mock_supabase = Mock()
-        
+
         # Act
         service = AiGenerationService(mock_supabase)
-        
+
         # Assert
         assert service.supabase == mock_supabase
 
@@ -402,11 +452,12 @@ class TestAiGenerationServiceInitialization:
         """Test get_ai_generation_service dependency factory."""
         # Arrange
         from src.services.ai_generation_service import get_ai_generation_service
+
         mock_supabase = Mock()
-        
+
         # Act
         service = get_ai_generation_service(mock_supabase)
-        
+
         # Assert
         assert isinstance(service, AiGenerationService)
         assert service.supabase == mock_supabase
@@ -420,10 +471,10 @@ class TestAiGenerationServiceError:
         # Arrange
         operation = "test_operation"
         details = "Test error details"
-        
+
         # Act
         error = AiGenerationServiceError(operation, details)
-        
+
         # Assert
         assert error.operation == operation
         assert error.details == details
@@ -434,10 +485,10 @@ class TestAiGenerationServiceError:
         """Test that AiGenerationServiceError inherits from Exception."""
         # Arrange & Act
         error = AiGenerationServiceError("test", "test")
-        
+
         # Assert
         assert isinstance(error, Exception)
-        
+
         # Test that it can be raised and caught
         with pytest.raises(AiGenerationServiceError):
-            raise error 
+            raise error

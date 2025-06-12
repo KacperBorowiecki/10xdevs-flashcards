@@ -1,6 +1,7 @@
-from supabase import create_client, Client
-from src.core.config import settings
 import logging
+
+from src.core.config import settings
+from supabase import Client, create_client
 
 logger = logging.getLogger(__name__)
 
@@ -9,8 +10,7 @@ def get_supabase_client() -> Client:
     """Create and return Supabase client instance."""
     try:
         client = create_client(
-            supabase_url=settings.supabase_url,
-            supabase_key=settings.supabase_anon_key
+            supabase_url=settings.supabase_url, supabase_key=settings.supabase_anon_key
         )
         logger.debug("Supabase client created successfully")
         return client
@@ -27,10 +27,9 @@ supabase: Client = get_supabase_client()
 async def sign_in_with_password(email: str, password: str):
     """Sign in user with email and password."""
     try:
-        response = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
+        response = supabase.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
         logger.info(f"User {email} signed in successfully")
         return response
     except Exception as e:
@@ -41,10 +40,7 @@ async def sign_in_with_password(email: str, password: str):
 async def sign_up(email: str, password: str):
     """Sign up new user with email and password."""
     try:
-        response = supabase.auth.sign_up({
-            "email": email,
-            "password": password
-        })
+        response = supabase.auth.sign_up({"email": email, "password": password})
         logger.info(f"User {email} signed up successfully")
         return response
     except Exception as e:
@@ -82,5 +78,3 @@ async def refresh_session():
     except Exception as e:
         logger.error(f"Failed to refresh session: {str(e)}")
         raise
-
- 
