@@ -1,0 +1,378 @@
+{% from 'macros/generate/generate_macros.html' import 
+    page_header,
+    text_input_form,
+    loading_spinner,
+    error_message,
+    success_message,
+    tips_section
+%}
+
+<!DOCTYPE html>
+<html lang="pl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generowanie Fiszek AI - 10x Cards</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Custom animations for generate view */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        /* Smooth transitions */
+        .generate-transition {
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Loading spinner animation */
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Pulse animation for progress */
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        
+        /* Focus states for accessibility */
+        .focus-ring:focus {
+            outline: 2px solid #8b5cf6;
+            outline-offset: 2px;
+        }
+        
+        /* Character counter animations */
+        .counter-warning {
+            color: #f59e0b;
+        }
+        
+        .counter-error {
+            color: #ef4444;
+        }
+        
+        .counter-success {
+            color: #10b981;
+        }
+        
+        /* Disabled state styling */
+        textarea:disabled {
+            background-color: #f9fafb;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        /* Fade in animation for suggestions */
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        /* Remove animation for elements */
+        @keyframes slideOut {
+            to {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        <!-- Navigation Bar -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold text-gray-900">
+                                <span class="text-purple-600">10x</span> Cards
+                            </h1>
+                        </div>
+                        <div class="hidden md:ml-6 md:flex md:items-center md:space-x-4">
+                            <a href="/dashboard" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium generate-transition">
+                                Dashboard
+                            </a>
+                            <a href="/flashcards" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium generate-transition">
+                                Fiszki
+                            </a>
+                            <a href="/study-session" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium generate-transition">
+                                Nauka
+                            </a>
+                            <a href="/generate" class="text-purple-600 px-3 py-2 rounded-md text-sm font-medium" aria-current="page">
+                                AI Generator
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-700 text-sm hidden sm:block">{{ user_email }}</span>
+                        <form action="/logout" method="post" class="inline">
+                            <button 
+                                type="submit"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium generate-transition focus-ring"
+                            >
+                                Wyloguj
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                
+                <!-- Page Header -->
+                <div class="fade-in">
+                    {{ page_header(user_email) }}
+                </div>
+                
+                <!-- Error and Success Messages -->
+                <div class="fade-in">
+                    {{ error_message(error_message if error_message else none) }}
+                    {{ success_message() }}
+                </div>
+                
+                <!-- Loading Spinner -->
+                <div class="fade-in">
+                    {{ loading_spinner() }}
+                </div>
+                
+                <!-- Text Input Form -->
+                <div id="textInputSection" class="fade-in">
+                    {{ text_input_form() }}
+                </div>
+                
+                <!-- Flashcard Suggestions Section (initially hidden) -->
+                <div id="suggestionsSection" class="hidden fade-in mt-8">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                
+                <!-- Tips Section -->
+                <div class="fade-in">
+                    {{ tips_section() }}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript for Generate Flashcards functionality -->
+    <script src="/static/js/generate_flashcards.js"></script>
+    
+    <!-- Inline JavaScript for immediate functionality -->
+    <script>
+        // Initialize the generate flashcards functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Generate flashcards page loaded successfully');
+            
+            // Enable textarea after page load
+            const textarea = document.getElementById('textContent');
+            if (textarea) {
+                textarea.disabled = false;
+                textarea.focus();
+            }
+            
+            // Initialize character counter
+            initializeCharacterCounter();
+            
+            // Initialize form validation
+            initializeFormValidation();
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + Enter to submit form
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    const generateButton = document.getElementById('generateButton');
+                    if (generateButton && !generateButton.disabled) {
+                        generateButton.click();
+                    }
+                }
+                
+                // Escape to clear form
+                if (e.key === 'Escape') {
+                    const textarea = document.getElementById('textContent');
+                    if (textarea && document.activeElement === textarea) {
+                        if (confirm('Czy na pewno chcesz wyczyścić formularz?')) {
+                            clearForm();
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Character counter initialization
+        function initializeCharacterCounter() {
+            const textarea = document.getElementById('textContent');
+            const characterCount = document.getElementById('characterCount');
+            const progressBar = document.getElementById('progressBar');
+            const counterInfo = document.getElementById('counterInfo');
+            
+            if (!textarea || !characterCount || !progressBar || !counterInfo) return;
+            
+            textarea.addEventListener('input', function() {
+                updateCharacterCounter();
+            });
+            
+            // Initial update
+            updateCharacterCounter();
+        }
+        
+        // Form validation initialization
+        function initializeFormValidation() {
+            const form = document.getElementById('generateForm');
+            if (!form) return;
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleFormSubmit();
+            });
+        }
+        
+        // Update character counter and validation
+        function updateCharacterCounter() {
+            const textarea = document.getElementById('textContent');
+            const characterCount = document.getElementById('characterCount');
+            const progressBar = document.getElementById('progressBar');
+            const counterInfo = document.getElementById('counterInfo');
+            const generateButton = document.getElementById('generateButton');
+            const validationMessage = document.getElementById('validationMessage');
+            const validationText = document.getElementById('validationText');
+            
+            if (!textarea || !characterCount || !progressBar || !counterInfo || !generateButton) return;
+            
+            const text = textarea.value;
+            const length = text.length;
+            const maxLength = 10000;
+            const minLength = 1000;
+            
+            // Update counter display
+            characterCount.textContent = length;
+            
+            // Update progress bar
+            const progress = Math.min((length / maxLength) * 100, 100);
+            progressBar.style.width = progress + '%';
+            
+            // Update validation state
+            let isValid = false;
+            let message = '';
+            let counterClass = '';
+            
+            if (length === 0) {
+                message = 'Wprowadź tekst...';
+                counterClass = 'text-gray-400';
+            } else if (length < minLength) {
+                message = `Potrzebujesz jeszcze ${minLength - length} znaków`;
+                counterClass = 'counter-warning';
+                showValidation(`Tekst musi mieć co najmniej ${minLength} znaków`);
+            } else if (length > maxLength) {
+                message = `Przekroczono limit o ${length - maxLength} znaków`;
+                counterClass = 'counter-error';
+                showValidation(`Tekst nie może przekraczać ${maxLength} znaków`);
+                // Truncate text
+                textarea.value = text.substring(0, maxLength);
+                return; // Recursive call will handle the truncated text
+            } else {
+                message = 'Gotowe do generowania';
+                counterClass = 'counter-success';
+                isValid = true;
+                hideValidation();
+            }
+            
+            // Update UI
+            counterInfo.textContent = message;
+            counterInfo.className = `text-xs ${counterClass}`;
+            generateButton.disabled = !isValid;
+            
+            // Update progress bar color
+            if (length >= minLength && length <= maxLength) {
+                progressBar.className = 'bg-green-500 h-1 rounded-full transition-all duration-300';
+            } else if (length > 0) {
+                progressBar.className = 'bg-orange-500 h-1 rounded-full transition-all duration-300';
+            } else {
+                progressBar.className = 'bg-purple-500 h-1 rounded-full transition-all duration-300';
+            }
+        }
+        
+        // Show validation message
+        function showValidation(message) {
+            const validationMessage = document.getElementById('validationMessage');
+            const validationText = document.getElementById('validationText');
+            
+            if (validationMessage && validationText) {
+                validationText.textContent = message;
+                validationMessage.classList.remove('hidden');
+            }
+        }
+        
+        // Hide validation message
+        function hideValidation() {
+            const validationMessage = document.getElementById('validationMessage');
+            if (validationMessage) {
+                validationMessage.classList.add('hidden');
+            }
+        }
+        
+        // Handle form submission
+        function handleFormSubmit() {
+            console.log('Form submitted - will be handled by generate_flashcards.js');
+            // This will be implemented in the external JS file
+        }
+        
+        // Clear form
+        function clearForm() {
+            const textarea = document.getElementById('textContent');
+            if (textarea) {
+                textarea.value = '';
+                updateCharacterCounter();
+                textarea.focus();
+            }
+        }
+        
+        // Hide error message
+        function hideError() {
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.classList.add('hidden');
+            }
+        }
+        
+        // Hide success message
+        function hideSuccess() {
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) {
+                successMessage.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html> 

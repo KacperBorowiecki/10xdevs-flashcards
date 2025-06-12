@@ -1,0 +1,225 @@
+{# Dashboard Header Macro #}
+{% macro dashboard_header(user_email) %}
+<header class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-600 mt-1">Witaj, {{ user_email }}</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <form action="/logout" method="post" class="inline">
+                <button 
+                    type="submit"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    aria-label="Wyloguj się"
+                >
+                    Wyloguj
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+{% endmacro %}
+
+{# Flashcard Stats Card Macro #}
+{% macro flashcard_stats_card(total_flashcards) %}
+<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer" onclick="window.location.href='/flashcards'">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4 flex-1">
+            <p class="text-2xl font-bold text-gray-900">{{ total_flashcards }}</p>
+            <p class="text-sm font-medium text-gray-600">Wszystkie fiszki</p>
+        </div>
+    </div>
+    <div class="mt-4">
+        <div class="text-xs text-gray-500">Kliknij aby zarządzać</div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Due Cards Stats Card Macro #}
+{% macro due_cards_stats_card(due_cards_today) %}
+<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer" onclick="window.location.href='/study-session'">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4 flex-1">
+            <p class="text-2xl font-bold text-gray-900">{{ due_cards_today }}</p>
+            <p class="text-sm font-medium text-gray-600">Do powtórki dziś</p>
+        </div>
+    </div>
+    <div class="mt-4">
+        <div class="text-xs text-gray-500">
+            {% if due_cards_today > 0 %}
+                Gotowe do nauki!
+            {% else %}
+                Wszystko na bieżąco
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# AI Stats Card Macro #}
+{% macro ai_stats_card(ai_stats) %}
+<div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer" onclick="window.location.href='/ai/generation-stats'">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4 flex-1">
+            <p class="text-2xl font-bold text-gray-900">{{ ai_stats.acceptance_ratio }}</p>
+            <p class="text-sm font-medium text-gray-600">Statystyki AI</p>
+        </div>
+    </div>
+    <div class="mt-4">
+        <div class="text-xs text-gray-500">
+            {% if ai_stats.total_generated > 0 %}
+                {{ (ai_stats.total_accepted / ai_stats.total_generated * 100) | round(1) }}% akceptacja
+            {% else %}
+                Brak generacji AI
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Stats Section Macro #}
+{% macro stats_section(stats) %}
+<section class="mb-12" id="statsSection">
+    <h2 class="text-xl font-semibold text-gray-900 mb-6">Twoje statystyki</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {{ flashcard_stats_card(stats.total_flashcards) }}
+        {{ due_cards_stats_card(stats.due_cards_today) }}
+        {{ ai_stats_card(stats.ai_stats) }}
+    </div>
+</section>
+{% endmacro %}
+
+{# Generate Flashcards Button Macro #}
+{% macro generate_flashcards_button() %}
+<a 
+    href="/generate" 
+    class="group bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2"
+    role="button"
+    aria-label="Generuj fiszki za pomocą AI"
+>
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center group-hover:bg-opacity-30 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4">
+            <h3 class="text-lg font-semibold">Generuj fiszki</h3>
+            <p class="text-sm text-purple-100">Stwórz fiszki z AI</p>
+        </div>
+    </div>
+</a>
+{% endmacro %}
+
+{# My Flashcards Button Macro #}
+{% macro my_flashcards_button() %}
+<a 
+    href="/flashcards" 
+    class="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2"
+    role="button"
+    aria-label="Zarządzaj moimi fiszkami"
+>
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center group-hover:bg-opacity-30 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4">
+            <h3 class="text-lg font-semibold">Moje fiszki</h3>
+            <p class="text-sm text-blue-100">Zarządzaj kolekcją</p>
+        </div>
+    </div>
+</a>
+{% endmacro %}
+
+{# Study Session Button Macro #}
+{% macro study_session_button() %}
+<a 
+    href="/study-session" 
+    class="group bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2"
+    role="button"
+    aria-label="Rozpocznij sesję nauki"
+>
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center group-hover:bg-opacity-30 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="ml-4">
+            <h3 class="text-lg font-semibold">Sesja nauki</h3>
+            <p class="text-sm text-green-100">Rozpocznij naukę</p>
+        </div>
+    </div>
+</a>
+{% endmacro %}
+
+{# Action Buttons Section Macro #}
+{% macro action_buttons_section() %}
+<section class="mb-12">
+    <h2 class="text-xl font-semibold text-gray-900 mb-6">Szybkie akcje</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{ generate_flashcards_button() }}
+        {{ my_flashcards_button() }}
+        {{ study_session_button() }}
+    </div>
+</section>
+{% endmacro %}
+
+{# Error Message Macro #}
+{% macro error_message(error_text) %}
+{% if error_text %}
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6" role="alert">
+    <div class="flex items-center">
+        <svg class="h-5 w-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <span class="text-red-800 text-sm">{{ error_text }}</span>
+        <button type="button" class="ml-auto text-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded" onclick="this.parentElement.parentElement.style.display='none'" aria-label="Zamknij komunikat błędu">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{# Loading Spinner Macro #}
+{% macro loading_spinner(id="loadingSpinner") %}
+<div id="{{ id }}" class="hidden">
+    <div class="flex items-center justify-center p-4">
+        <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+        <span class="text-gray-600">Ładowanie...</span>
+    </div>
+</div>
+{% endmacro %} 

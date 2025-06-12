@@ -1,30 +1,49 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional # Dodane na wszelki wypadek, gdybyś chciał dodać opcjonalne ustawienia
+from typing import Optional
+import os
+
 
 class Settings(BaseSettings):
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
+    """Application settings loaded from environment variables."""
     
-    # OpenRouter.ai LLM Configuration
-    OPENROUTER_API_KEY: str
-    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "google/gemma-3-27b-it"
-    LLM_TIMEOUT: int = 30
-    LLM_MAX_TOKENS: int = 2000
+    # Supabase Configuration
+    supabase_url: str
+    supabase_anon_key: str
+    supabase_service_key: Optional[str] = None
     
-    # Możesz tutaj dodać inne globalne ustawienia aplikacji w przyszłości
-    # np. DATABASE_URL: str, SECRET_KEY: str, etc.
+    # Application Configuration
+    app_secret_key: str
+    app_env: str = "development"
+    
+    # Auth Configuration
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24  # 24 hours
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra='ignore'  # Ignore extra environment variables
+    )
 
-    # Konfiguracja Pydantic do wczytywania zmiennych z pliku .env
-    # oraz ignorowania dodatkowych zmiennych, jeśli istnieją w systemie
-    model_config = SettingsConfigDict(env_file=".env", extra='ignore', env_file_encoding='utf-8')
 
-# Tworzymy instancję ustawień, która będzie importowana w innych częściach aplikacji
-# settings = Settings()  # Moved to individual modules to avoid circular imports
+# Create global settings instance
+settings = Settings()
 
-# Aby upewnić się, że wszystko działa, możesz tymczasowo dodać:
-# if __name__ == "__main__":
-#     print("Ładowanie ustawień:")
-#     print(f"Supabase URL: {settings.SUPABASE_URL}")
-#     print(f"Supabase Key: {settings.SUPABASE_KEY}")
-#     # Pamiętaj, aby to usunąć lub zakomentować w kodzie produkcyjnym 
+
+# Helper function to check if we're in development
+def is_development() -> bool:
+    """Check if application is running in development mode."""
+    return settings.app_env == "development"
+
+# Keep OpenRouter settings for backwards compatibility
+try:
+    OPENROUTER_API_KEY: Optional[str] = os.getenv("OPENROUTER_API_KEY")
+    OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "google/gemma-3-27b-it")
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
+    LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "2000"))
+except Exception:
+    pass
+
+ 

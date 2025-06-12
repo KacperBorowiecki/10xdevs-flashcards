@@ -1,0 +1,53 @@
+<!-- Confirm Delete Modal (Placeholder) -->
+<div 
+    id="confirmDeleteModal" 
+    class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop bg-black bg-opacity-50"
+>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Usuń fiszkę</h3>
+                <button 
+                    type="button"
+                    onclick="closeModal('confirmDeleteModal')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <span class="sr-only">Zamknij</span>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4">
+            <p class="text-gray-600">Modal potwierdzenia usunięcia fiszki zostanie zaimplementowany w następnych krokach.</p>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+                type="button"
+                onclick="closeModal('confirmDeleteModal')"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+                Anuluj
+            </button>
+            <button
+                type="button"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            >
+                Usuń
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Placeholder functions for delete modal
+    function populateDeleteModal(flashcardData) {
+        console.log('Delete modal will be implemented in next steps:', flashcardData);
+    }
+</script> 

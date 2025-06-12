@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moje fiszki - 10x Cards</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        /* Smooth transitions */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Card hover effect */
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Focus states for accessibility */
+        .focus-ring:focus {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+        }
+        
+        /* Modal backdrop */
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Loading spinner animation */
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        <!-- Navigation Bar -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold text-gray-900">
+                                <span class="text-blue-600">10x</span> Cards
+                            </h1>
+                        </div>
+                        <div class="hidden md:ml-6 md:flex md:items-center md:space-x-4">
+                            <a href="/dashboard" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                Dashboard
+                            </a>
+                            <a href="/my-flashcards" class="text-blue-600 px-3 py-2 rounded-md text-sm font-medium" aria-current="page">
+                                Moje fiszki
+                            </a>
+                            <a href="/study-session" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                Nauka
+                            </a>
+                            <a href="/generate" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all">
+                                AI Generator
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-700 text-sm hidden sm:block">{{ user_email }}</span>
+                        <form action="/logout" method="post" class="inline">
+                            <button 
+                                type="submit"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all focus-ring"
+                            >
+                                Wyloguj
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                
+                <!-- Page Header -->
+                <div class="mb-8 fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Moje fiszki</h1>
+                            <p class="mt-2 text-gray-600">Zarządzaj swoimi fiszkami - przeglądaj, edytuj i dodawaj nowe</p>
+                        </div>
+                        <button 
+                            id="addFlashcardBtn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all focus-ring inline-flex items-center"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Dodaj fiszkę
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message Display -->
+                {% if error_message %}
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-800">{{ error_message }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Filter Controls -->
+                <div class="mb-6 fade-in">
+                    {% include 'partials/filter_controls.html' %}
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="fade-in">
+                    {% if flashcards and flashcards.items %}
+                        <!-- Flashcards Grid -->
+                        {% include 'partials/flashcard_grid.html' %}
+                        
+                        <!-- Pagination -->
+                        {% if flashcards.pages > 1 %}
+                        <div class="mt-8">
+                            {% include 'partials/pagination.html' %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Empty State -->
+                        {% include 'partials/empty_state.html' %}
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    {% include 'modals/create_flashcard_modal.html' %}
+    {% include 'modals/edit_flashcard_modal.html' %}
+    {% include 'modals/confirm_delete_modal.html' %}
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+    <!-- JavaScript -->
+    <script>
+        // Global state for flashcards page
+        const flashcardsPageState = {
+            modals: {
+                create: false,
+                edit: false,
+                delete: false
+            },
+            loading: {
+                delete: false,
+                create: false,
+                edit: false
+            },
+            currentFlashcard: null
+        };
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-600' : 
+                           type === 'error' ? 'bg-red-600' : 
+                           'bg-blue-600';
+            
+            toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-medium">${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Modal utilities
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+                
+                // Focus first input in modal
+                const firstInput = modal.querySelector('input, textarea');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+                
+                // Reset form if exists
+                const form = modal.querySelector('form');
+                if (form) {
+                    form.reset();
+                }
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('My Flashcards page loaded');
+            
+            // Add flashcard button
+            document.getElementById('addFlashcardBtn')?.addEventListener('click', function() {
+                openModal('createFlashcardModal');
+            });
+            
+            // ESC key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal('createFlashcardModal');
+                    closeModal('editFlashcardModal');
+                    closeModal('confirmDeleteModal');
+                }
+            });
+            
+            // Click outside modal to close
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal-backdrop')) {
+                    const modalId = e.target.id;
+                    closeModal(modalId);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
