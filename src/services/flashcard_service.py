@@ -84,7 +84,7 @@ class FlashcardService:
             
             # Insert flashcard
             flashcard_response = self.supabase.table("flashcards").insert(
-                flashcard_data.model_dump(exclude_unset=True)
+                flashcard_data.model_dump(exclude_unset=True, mode='json')
             ).execute()
             
             if not flashcard_response.data:
@@ -104,7 +104,7 @@ class FlashcardService:
             
             # Insert spaced repetition record
             spaced_rep_response = self.supabase.table("user_flashcard_spaced_repetition").insert(
-                spaced_repetition_data.model_dump(exclude_unset=True)
+                spaced_repetition_data.model_dump(exclude_unset=True, mode='json')
             ).execute()
             
             if not spaced_rep_response.data:

@@ -119,7 +119,7 @@ class AIService:
             )
             
             result = self.supabase.table("source_texts").insert(
-                source_text_data.model_dump()
+                source_text_data.model_dump(mode='json')
             ).execute()
             
             if not result.data:
@@ -163,7 +163,7 @@ class AIService:
                     status=FlashcardStatusEnum.PENDING_REVIEW,
                     source_text_id=source_text_id
                 )
-                flashcard_creates.append(flashcard_data.model_dump())
+                flashcard_creates.append(flashcard_data.model_dump(mode='json'))
             
             if not flashcard_creates:
                 raise AIServiceError(
@@ -214,7 +214,7 @@ class AIService:
             )
             
             result = self.supabase.table("ai_generation_events").insert(
-                event_data.model_dump(exclude_none=True)
+                event_data.model_dump(exclude_none=True, mode='json')
             ).execute()
             
             if not result.data:

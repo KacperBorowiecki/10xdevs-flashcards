@@ -32,17 +32,33 @@ class AuthMiddleware:
             try:
                 # Verify token with Supabase
                 access_token = auth_data['access_token']
+                refresh_token = request.cookies.get("refresh_token")
                 
                 # Try to get current session from Supabase
-                supabase.auth.set_session(access_token)
+                if refresh_token:
+                    supabase.auth.set_session(access_token, refresh_token)
+                else:
+                    # If no refresh token, try to validate access token differently
+                    try:
+                        user_response = supabase.auth.get_user(access_token)
+                        if user_response.user:
+                            request.state.user = {
+                                'id': user_response.user.id,
+                                'email': user_response.user.email
+                            }
+                            response = await call_next(request)
+                            return response
+                    except Exception:
+                        pass
+                
                 session = await get_session()
                 
-                if session and session.session:
+                if session and hasattr(session, 'user') and session.user:
                     # Session is valid, continue
                     request.state.user = {
-                        'id': session.session.user.id,
-                        'email': session.session.user.email,
-                        'session': session.session
+                        'id': session.user.id,
+                        'email': session.user.email,
+                        'session': session
                     }
                     response = await call_next(request)
                     return response

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
 from contextlib import asynccontextmanager
@@ -108,4 +108,10 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
-    } 
+    }
+
+# Favicon endpoint to prevent 404 errors
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Return empty response for favicon requests to prevent 404."""
+    return Response(status_code=204) 
