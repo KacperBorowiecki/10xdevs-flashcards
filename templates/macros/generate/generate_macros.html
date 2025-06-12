@@ -1,0 +1,255 @@
+{# Page Header Macro #}
+{% macro page_header(user_email) %}
+<header class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Generowanie fiszek AI</h1>
+            <p class="text-gray-600 mt-1">Stwórz fiszki automatycznie z tekstu za pomocą sztucznej inteligencji</p>
+        </div>
+        <div class="text-sm text-gray-500">
+            Zalogowany jako: {{ user_email }}
+        </div>
+    </div>
+</header>
+{% endmacro %}
+
+{# Text Input Form Macro #}
+{% macro text_input_form() %}
+<form id="generateForm" class="space-y-6">
+    <div class="bg-white shadow-lg rounded-xl p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Wprowadź tekst do analizy</h2>
+        
+        {# Textarea with Counter #}
+        {{ textarea_with_counter() }}
+        
+        {# Validation Message #}
+        <div id="validationMessage" class="hidden mt-2">
+            <div class="flex items-center text-sm">
+                <svg class="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span id="validationText" class="text-red-600"></span>
+            </div>
+        </div>
+        
+        {# Generate Button #}
+        <div class="mt-6">
+            {{ generate_button() }}
+        </div>
+    </div>
+</form>
+{% endmacro %}
+
+{# Textarea with Counter Macro #}
+{% macro textarea_with_counter() %}
+<div class="space-y-2">
+    <label for="textContent" class="block text-sm font-medium text-gray-700">
+        Tekst źródłowy (1000-10000 znaków)
+    </label>
+    <div class="relative">
+        <textarea
+            id="textContent"
+            name="text_content"
+            rows="12"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-colors"
+            placeholder="Wprowadź tutaj tekst, z którego chcesz wygenerować fiszki edukacyjne. Tekst powinien mieć między 1000 a 10000 znaków i zawierać materiał edukacyjny, z którego AI będzie mogło stworzyć pytania i odpowiedzi..."
+            disabled
+        ></textarea>
+        
+        {# Character Counter #}
+        <div class="absolute bottom-3 right-3 bg-white bg-opacity-90 px-2 py-1 rounded text-xs">
+            <span id="characterCount" class="text-gray-500">0</span>
+            <span class="text-gray-400">/10000</span>
+        </div>
+    </div>
+    
+    {# Progress Bar #}
+    <div class="w-full bg-gray-200 rounded-full h-1">
+        <div id="progressBar" class="bg-purple-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    
+    {# Character Counter Info #}
+    <div class="flex justify-between text-xs text-gray-500">
+        <span>Minimum: 1000 znaków</span>
+        <span id="counterInfo" class="text-gray-400">Wprowadź tekst...</span>
+    </div>
+</div>
+{% endmacro %}
+
+{# Generate Button Macro #}
+{% macro generate_button() %}
+<button
+    type="submit"
+    id="generateButton"
+    class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 disabled:focus:ring-gray-300"
+    disabled
+>
+    <span id="buttonContent" class="flex items-center justify-center">
+        <svg id="buttonIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+        </svg>
+        <span id="buttonText">Generuj fiszki</span>
+    </span>
+</button>
+{% endmacro %}
+
+{# Loading Spinner Macro #}
+{% macro loading_spinner() %}
+<div id="loadingSpinner" class="hidden">
+    <div class="bg-white shadow-lg rounded-xl p-8 text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Generuję fiszki...</h3>
+        <p class="text-gray-600">To może potrwać kilka chwil. Proszę czekać...</p>
+        <div class="mt-4 bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Error Message Macro #}
+{% macro error_message(error_text=None) %}
+<div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6" role="alert">
+    <div class="flex items-center">
+        <svg class="h-5 w-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <span id="errorText" class="text-red-800 text-sm">
+            {% if error_text %}{{ error_text }}{% endif %}
+        </span>
+        <button type="button" class="ml-auto text-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded" onclick="hideError()" aria-label="Zamknij komunikat błędu">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+{# Success Message Macro #}
+{% macro success_message() %}
+<div id="successMessage" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-6" role="alert">
+    <div class="flex items-center">
+        <svg class="h-5 w-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span id="successText" class="text-green-800 text-sm"></span>
+        <button type="button" class="ml-auto text-green-400 hover:text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded" onclick="hideSuccess()" aria-label="Zamknij komunikat sukcesu">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+{# Flashcard Suggestion Card Macro #}
+{% macro flashcard_suggestion_card(suggestion, index) %}
+<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-300 animate-fadeIn" 
+     data-suggestion-id="{{ suggestion.id }}"
+     style="animation-delay: {{ index * 100 }}ms">
+    <div class="flex justify-between items-start mb-3">
+        <h3 class="text-sm font-medium text-gray-900">Fiszka {{ index + 1 }}</h3>
+        <div class="flex space-x-2">
+            <button onclick="editSuggestion('{{ suggestion.id }}')" 
+                    class="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300">
+                Edytuj
+            </button>
+            <button onclick="acceptSuggestion('{{ suggestion.id }}')" 
+                    class="text-green-600 hover:text-green-800 text-sm px-2 py-1 rounded hover:bg-green-50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300">
+                Akceptuj
+            </button>
+            <button onclick="rejectSuggestion('{{ suggestion.id }}')" 
+                    class="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300">
+                Odrzuć
+            </button>
+        </div>
+    </div>
+    <div class="space-y-3">
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Przód:</label>
+            <div class="front-content text-sm text-gray-900 bg-white p-2 rounded border">{{ suggestion.front_content }}</div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Tył:</label>
+            <div class="back-content text-sm text-gray-900 bg-white p-2 rounded border">{{ suggestion.back_content }}</div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Flashcard Suggestions List Macro #}
+{% macro flashcard_suggestions_list(suggestions) %}
+<div class="bg-white shadow-lg rounded-xl p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Propozycje fiszek</h2>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-500">{{ suggestions|length }} propozycji</span>
+            <div class="flex space-x-2">
+                <button onclick="acceptAllSuggestions()" 
+                        class="text-green-600 hover:text-green-800 text-sm px-3 py-1 rounded border border-green-300 hover:bg-green-50 transition-colors">
+                    Akceptuj wszystkie
+                </button>
+                <button onclick="rejectAllSuggestions()" 
+                        class="text-red-600 hover:text-red-800 text-sm px-3 py-1 rounded border border-red-300 hover:bg-red-50 transition-colors">
+                    Odrzuć wszystkie
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="flashcardSuggestionsList" class="space-y-4">
+        {% for suggestion in suggestions %}
+            {{ flashcard_suggestion_card(suggestion, loop.index0) }}
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
+{# Skeleton Loading Card Macro #}
+{% macro skeleton_loading_card() %}
+<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 animate-pulse">
+    <div class="flex justify-between items-start mb-3">
+        <div class="h-4 bg-gray-300 rounded w-20"></div>
+        <div class="flex space-x-2">
+            <div class="h-8 bg-gray-300 rounded w-16"></div>
+            <div class="h-8 bg-gray-300 rounded w-20"></div>
+            <div class="h-8 bg-gray-300 rounded w-16"></div>
+        </div>
+    </div>
+    <div class="space-y-3">
+        <div>
+            <div class="h-3 bg-gray-300 rounded w-16 mb-2"></div>
+            <div class="h-10 bg-gray-200 rounded"></div>
+        </div>
+        <div>
+            <div class="h-3 bg-gray-300 rounded w-16 mb-2"></div>
+            <div class="h-10 bg-gray-200 rounded"></div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Tips Section Macro #}
+{% macro tips_section() %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">Wskazówki dla najlepszych rezultatów</h3>
+            <div class="mt-2 text-sm text-blue-700">
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Wprowadź tekst między 1000 a 10000 znaków</li>
+                    <li>Używaj materiałów edukacyjnych z jasno zdefiniowanymi konceptami</li>
+                    <li>Tekst powinien zawierać fakty, definicje lub wyjaśnienia</li>
+                    <li>Unikaj tekstów z wieloma pytaniami retorycznymi</li>
+                    <li>AI najlepiej radzi sobie z tekstami akademickimi lub profesjonalnymi</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %} 

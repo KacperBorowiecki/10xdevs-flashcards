@@ -1,0 +1,257 @@
+<!-- Create Flashcard Modal -->
+<div 
+    id="createFlashcardModal" 
+    class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop bg-black bg-opacity-50"
+>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Utwórz nową fiszkę</h3>
+                <button 
+                    type="button"
+                    onclick="closeModal('createFlashcardModal')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <span class="sr-only">Zamknij</span>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="createFlashcardForm" class="px-6 py-4">
+            <!-- Front Content -->
+            <div class="mb-4">
+                <label for="createFrontContent" class="block text-sm font-medium text-gray-700 mb-2">
+                    Przód fiszki *
+                </label>
+                <textarea
+                    id="createFrontContent"
+                    name="front_content"
+                    rows="3"
+                    maxlength="500"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    placeholder="Wpisz pytanie lub tekst dla przodu fiszki..."
+                ></textarea>
+                <div class="flex justify-between mt-1">
+                    <span id="createFrontError" class="text-sm text-red-600 hidden"></span>
+                    <span id="createFrontCounter" class="text-sm text-gray-500">0/500</span>
+                </div>
+            </div>
+
+            <!-- Back Content -->
+            <div class="mb-6">
+                <label for="createBackContent" class="block text-sm font-medium text-gray-700 mb-2">
+                    Tył fiszki *
+                </label>
+                <textarea
+                    id="createBackContent"
+                    name="back_content"
+                    rows="4"
+                    maxlength="1000"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    placeholder="Wpisz odpowiedź lub wyjaśnienie dla tyłu fiszki..."
+                ></textarea>
+                <div class="flex justify-between mt-1">
+                    <span id="createBackError" class="text-sm text-red-600 hidden"></span>
+                    <span id="createBackCounter" class="text-sm text-gray-500">0/1000</span>
+                </div>
+            </div>
+
+            <!-- Form Error Display -->
+            <div id="createFormError" class="mb-4 hidden">
+                <div class="bg-red-50 border border-red-200 rounded-md p-3">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p id="createFormErrorText" class="text-sm text-red-800"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+                type="button"
+                onclick="closeModal('createFlashcardModal')"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            >
+                Anuluj
+            </button>
+            <button
+                type="submit"
+                form="createFlashcardForm"
+                id="createSubmitBtn"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center"
+            >
+                <span id="createSubmitText">Utwórz fiszkę</span>
+                <svg id="createSubmitSpinner" class="hidden animate-spin ml-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Character counters and validation for create modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const frontTextarea = document.getElementById('createFrontContent');
+        const backTextarea = document.getElementById('createBackContent');
+        const frontCounter = document.getElementById('createFrontCounter');
+        const backCounter = document.getElementById('createBackCounter');
+        const form = document.getElementById('createFlashcardForm');
+
+        // Front content counter and validation
+        frontTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            frontCounter.textContent = `${length}/500`;
+            
+            if (length > 500) {
+                frontCounter.classList.add('text-red-600');
+                frontCounter.classList.remove('text-gray-500');
+            } else {
+                frontCounter.classList.remove('text-red-600');
+                frontCounter.classList.add('text-gray-500');
+            }
+            
+            validateCreateForm();
+        });
+
+        // Back content counter and validation
+        backTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            backCounter.textContent = `${length}/1000`;
+            
+            if (length > 1000) {
+                backCounter.classList.add('text-red-600');
+                backCounter.classList.remove('text-gray-500');
+            } else {
+                backCounter.classList.remove('text-red-600');
+                backCounter.classList.add('text-gray-500');
+            }
+            
+            validateCreateForm();
+        });
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleCreateFlashcard();
+        });
+    });
+
+    function validateCreateForm() {
+        const frontContent = document.getElementById('createFrontContent').value.trim();
+        const backContent = document.getElementById('createBackContent').value.trim();
+        const submitBtn = document.getElementById('createSubmitBtn');
+        const frontError = document.getElementById('createFrontError');
+        const backError = document.getElementById('createBackError');
+
+        let isValid = true;
+
+        // Validate front content
+        if (frontContent.length === 0) {
+            frontError.textContent = 'Przód fiszki jest wymagany';
+            frontError.classList.remove('hidden');
+            isValid = false;
+        } else if (frontContent.length > 500) {
+            frontError.textContent = 'Przód fiszki może mieć maksymalnie 500 znaków';
+            frontError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            frontError.classList.add('hidden');
+        }
+
+        // Validate back content
+        if (backContent.length === 0) {
+            backError.textContent = 'Tył fiszki jest wymagany';
+            backError.classList.remove('hidden');
+            isValid = false;
+        } else if (backContent.length > 1000) {
+            backError.textContent = 'Tył fiszki może mieć maksymalnie 1000 znaków';
+            backError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            backError.classList.add('hidden');
+        }
+
+        // Enable/disable submit button
+        if (isValid) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        return isValid;
+    }
+
+    async function handleCreateFlashcard() {
+        if (!validateCreateForm()) {
+            return;
+        }
+
+        const submitBtn = document.getElementById('createSubmitBtn');
+        const submitText = document.getElementById('createSubmitText');
+        const submitSpinner = document.getElementById('createSubmitSpinner');
+        const formError = document.getElementById('createFormError');
+        const formErrorText = document.getElementById('createFormErrorText');
+
+        // Show loading state
+        flashcardsPageState.loading.create = true;
+        submitBtn.disabled = true;
+        submitText.textContent = 'Tworzenie...';
+        submitSpinner.classList.remove('hidden');
+        formError.classList.add('hidden');
+
+        try {
+            const formData = {
+                front_content: document.getElementById('createFrontContent').value.trim(),
+                back_content: document.getElementById('createBackContent').value.trim()
+            };
+
+            const response = await fetch('/api/v1/flashcards', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                showToast('Fiszka została utworzona pomyślnie!', 'success');
+                closeModal('createFlashcardModal');
+                // Reload page to show new flashcard
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Wystąpił błąd podczas tworzenia fiszki');
+            }
+        } catch (error) {
+            console.error('Error creating flashcard:', error);
+            formErrorText.textContent = error.message;
+            formError.classList.remove('hidden');
+            showToast('Nie udało się utworzyć fiszki', 'error');
+        } finally {
+            // Reset loading state
+            flashcardsPageState.loading.create = false;
+            submitBtn.disabled = false;
+            submitText.textContent = 'Utwórz fiszkę';
+            submitSpinner.classList.add('hidden');
+        }
+    }
+</script> 

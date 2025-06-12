@@ -1,24 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uuid
 import logging
-from typing import Annotated
+from typing import Annotated, Dict, Any, Optional
 from datetime import datetime
 import time
 
-from supabase import Client
+from supabase import Client, create_client, ClientOptions
 from src.db.supabase_client import get_supabase_client
 from src.services.ai_service import AIService, AIServiceError, get_ai_service
 from src.services.ai_generation_service import AiGenerationService, AiGenerationServiceError, get_ai_generation_service
 from src.services.llm_client import LLMServiceError
+from src.services.auth_service import AuthService
+from src.middleware.auth_middleware import get_current_user
+from src.core.config import settings
 from src.dtos import AIGenerateFlashcardsRequest, AIGenerateFlashcardsResponse
 from src.api.v1.schemas.ai_schemas import PaginatedAiGenerationStatsResponse
 
 logger = logging.getLogger(__name__)
-security = HTTPBearer()
 
-# Import utility functions from flashcards router for consistency
-from src.api.v1.routers.flashcards import (
+# Import utility functions from shared utils module
+from src.api.v1.routers.utils import (
     add_security_headers,
     check_rate_limit,
     validate_request_integrity,
@@ -27,60 +28,114 @@ from src.api.v1.routers.flashcards import (
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-async def get_current_user_id(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    supabase: Annotated[Client, Depends(get_supabase_client)]
+async def require_auth_for_ai(
+    request: Request,
+    current_user: Optional[Dict[str, Any]] = Depends(get_current_user)
 ) -> uuid.UUID:
     """
-    Extract and validate user_id from JWT token.
+    Dependency that requires authentication for AI endpoints and returns user UUID.
+    Uses session-based authentication consistent with other parts of the application.
     
     Args:
-        credentials: JWT token from Authorization header
-        supabase: Supabase client instance
+        request: FastAPI request object
+        current_user: Current user data from middleware
         
     Returns:
-        User UUID from validated token
+        User UUID from authenticated session
         
     Raises:
-        HTTPException: If token is invalid or user not found
+        HTTPException: If user is not authenticated
     """
-    try:
-        # Get user from Supabase using the JWT token
-        user_response = supabase.auth.get_user(credentials.credentials)
-        
-        if not user_response.user:
+    if not current_user:
+        # Check if user is authenticated via cookie (fallback)
+        if not AuthService.is_authenticated(request):
+            logger.info("Unauthenticated API request for AI services")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Authentication required"
             )
         
-        return uuid.UUID(user_response.user.id)
+        # Get user data from auth cookie (fallback)
+        auth_data = AuthService.get_auth_data(request)
+        if not auth_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required"
+            )
+        
+        user_id_str = auth_data.get('user_id')
+    else:
+        user_id_str = current_user.get('id')
     
-    except ValueError:
+    if not user_id_str:
+        logger.error("User ID not found in authentication data")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user ID format",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid authentication data"
         )
-    except Exception as e:
-        logger.error(f"Authentication error: {str(e)}")
+    
+    try:
+        return uuid.UUID(str(user_id_str))
+    except ValueError:
+        logger.error(f"Invalid user ID format: {user_id_str}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid user ID format"
+        )
+
+def get_authenticated_supabase_client(request: Request) -> Client:
+    """
+    Create Supabase client with user authentication token for RLS.
+    
+    Args:
+        request: FastAPI request object to extract auth token from cookies
+        
+    Returns:
+        Authenticated Supabase client
+        
+    Raises:
+        HTTPException: If no auth token is found
+    """
+    # Get access token from cookies
+    access_token = request.cookies.get("access_token")
+    
+    if not access_token:
+        logger.error("No access token found in cookies for RLS operations")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token required for database operations"
+        )
+    
+    # Create authenticated Supabase client with user token
+    try:
+        client = create_client(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_anon_key,
+            options=ClientOptions(
+                headers={
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+        )
+        logger.debug(f"Created authenticated Supabase client for user")
+        return client
+    except Exception as e:
+        logger.error(f"Failed to create authenticated Supabase client: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initialize database connection"
         )
 
 def get_ai_service_dependency(
-    supabase: Annotated[Client, Depends(get_supabase_client)]
+    supabase: Annotated[Client, Depends(get_authenticated_supabase_client)]
 ) -> AIService:
-    """Dependency to get AIService instance."""
+    """Dependency to get AIService instance with authenticated client."""
     return get_ai_service(supabase)
 
 def get_ai_generation_service_dependency(
-    supabase: Annotated[Client, Depends(get_supabase_client)]
+    supabase: Annotated[Client, Depends(get_authenticated_supabase_client)]
 ) -> AiGenerationService:
-    """Dependency to get AiGenerationService instance."""
+    """Dependency to get AiGenerationService instance with authenticated client."""
     return get_ai_generation_service(supabase)
 
 @router.post(
@@ -96,7 +151,7 @@ async def generate_flashcards(
     request: Request,
     response: Response,
     data: AIGenerateFlashcardsRequest,
-    current_user_id: Annotated[uuid.UUID, Depends(get_current_user_id)],
+    current_user_id: Annotated[uuid.UUID, Depends(require_auth_for_ai)],
     ai_service: Annotated[AIService, Depends(get_ai_service_dependency)]
 ) -> AIGenerateFlashcardsResponse:
     """
@@ -299,7 +354,7 @@ async def generate_flashcards(
 async def get_generation_stats(
     request: Request,
     response: Response,
-    current_user_id: Annotated[uuid.UUID, Depends(get_current_user_id)],
+    current_user_id: Annotated[uuid.UUID, Depends(require_auth_for_ai)],
     ai_generation_service: Annotated[AiGenerationService, Depends(get_ai_generation_service_dependency)],
     page: int = Query(1, ge=1, description="Page number for pagination"),
     size: int = Query(20, ge=1, le=100, description="Items per page")

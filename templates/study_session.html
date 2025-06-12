@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pl" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesja nauki - 10x-cards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for card flip animation */
+        .study-card {
+            perspective: 1000px;
+            width: 400px;
+            height: 300px;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        
+        .study-card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: white;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        
+        /* Rating buttons styling */
+        .rating-button {
+            transition: all 0.2s ease;
+        }
+        
+        .rating-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .rating-button:active {
+            transform: scale(0.95);
+        }
+        
+        /* Loading spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="h-full">
+    <div class="min-h-full bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">Sesja nauki</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600">{{ user_email }}</span>
+                        <a href="/dashboard" 
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1">
+                            ← Powrót do Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <!-- Progress Indicator -->
+            <div class="text-center mb-8">
+                <div id="progressIndicator" class="text-lg font-semibold text-gray-700">
+                    Ładowanie...
+                </div>
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="flex flex-col items-center justify-center py-16" style="display: flex;">
+                <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p id="loadingMessage" class="text-gray-600 text-lg">Ładowanie fiszek do powtórki...</p>
+            </div>
+
+            <!-- Main Study Content -->
+            <div id="mainContent" class="text-center" style="display: none;">
+                <!-- Study Card -->
+                <div class="flex justify-center mb-8">
+                    <div id="studyCard" class="study-card">
+                        <div class="card-inner">
+                            <div class="card-front">
+                                <div id="cardContent" class="w-full">
+                                    <!-- Card content will be dynamically inserted here -->
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <div id="cardContentBack" class="w-full">
+                                    <!-- Back content will be dynamically inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Show Answer Button -->
+                <div id="showAnswerButton" class="mb-8">
+                    <button onclick="window.studySessionManager.showAnswer()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-lg">
+                        Pokaż odpowiedź
+                        <span class="ml-2 text-sm opacity-75">(Spacja)</span>
+                    </button>
+                </div>
+
+                <!-- Rating Scale -->
+                <div id="ratingScale" class="space-y-4" style="display: none;">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        Jak dobrze znałeś odpowiedź?
+                    </h3>
+                    <div class="flex justify-center space-x-4">
+                        <button data-rating="1" 
+                                onclick="window.studySessionManager.submitRating(1)"
+                                class="rating-button bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-w-12">
+                            1
+                        </button>
+                        <button data-rating="2" 
+                                onclick="window.studySessionManager.submitRating(2)"
+                                class="rating-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 min-w-12">
+                            2
+                        </button>
+                        <button data-rating="3" 
+                                onclick="window.studySessionManager.submitRating(3)"
+                                class="rating-button bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 min-w-12">
+                            3
+                        </button>
+                        <button data-rating="4" 
+                                onclick="window.studySessionManager.submitRating(4)"
+                                class="rating-button bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-w-12">
+                            4
+                        </button>
+                        <button data-rating="5" 
+                                onclick="window.studySessionManager.submitRating(5)"
+                                class="rating-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-w-12">
+                            5
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-4">
+                        <div class="flex justify-between max-w-md mx-auto">
+                            <span>Nie pamiętam</span>
+                            <span>Trudne</span>
+                            <span>Dobre</span>
+                            <span>Łatwe</span>
+                            <span>Perfekcyjne</span>
+                        </div>
+                        <p class="mt-2 text-xs opacity-75">Użyj klawiszy 1-5 lub kliknij przyciski</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State (No cards due for review) -->
+            <div id="emptyState" class="text-center py-16" style="display: none;">
+                <div class="max-w-md mx-auto">
+                    <div class="mb-6">
+                        <svg class="mx-auto h-24 w-24 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Świetna robota!</h2>
+                    <p class="text-gray-600 mb-8">
+                        Nie masz żadnych fiszek do powtórki. Wróć jutro lub dodaj nowe fiszki do swojej kolekcji.
+                    </p>
+                    <div class="space-y-4">
+                        <button onclick="window.studySessionManager.navigateToDashboard()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Powrót do Dashboard
+                        </button>
+                        <a href="/generate" 
+                           class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Generuj nowe fiszki
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion State -->
+            <div id="completionState" class="text-center py-16" style="display: none;">
+                <div class="max-w-md mx-auto">
+                    <div class="mb-6">
+                        <svg class="mx-auto h-24 w-24 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Sesja ukończona!</h2>
+                    <p class="text-gray-600 mb-8">
+                        Brawo! Przeszedłeś przez wszystkie zaplanowane na dziś fiszki. Twój mózg dzięki Ci za naukę!
+                    </p>
+                    <div class="space-y-4">
+                        <button onclick="window.studySessionManager.navigateToDashboard()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Powrót do Dashboard
+                        </button>
+                        <button onclick="window.studySessionManager.restartSession()" 
+                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Rozpocznij ponownie
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="text-center py-16" style="display: none;">
+                <div class="max-w-md mx-auto">
+                    <div class="mb-6">
+                        <svg class="mx-auto h-24 w-24 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Wystąpił błąd</h2>
+                    <p id="errorMessage" class="text-gray-600 mb-8">
+                        Coś poszło nie tak podczas ładowania sesji nauki.
+                    </p>
+                    <div class="space-y-4">
+                        <button onclick="window.studySessionManager.restartSession()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Spróbuj ponownie
+                        </button>
+                        <button onclick="window.studySessionManager.navigateToDashboard()" 
+                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Powrót do Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Keyboard shortcuts help -->
+        <div class="fixed bottom-4 right-4 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-4 text-xs text-gray-600 max-w-xs">
+            <h4 class="font-semibold mb-2">Skróty klawiszowe:</h4>
+            <div class="space-y-1">
+                <div><kbd class="bg-gray-200 px-1 rounded">Spacja</kbd> / <kbd class="bg-gray-200 px-1 rounded">Enter</kbd> - Pokaż odpowiedź</div>
+                <div><kbd class="bg-gray-200 px-1 rounded">1-5</kbd> - Oceń swoją odpowiedź</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the study session JavaScript -->
+    <script src="/static/js/study_session.js"></script>
+</body>
+</html> 

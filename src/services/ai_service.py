@@ -8,6 +8,7 @@ from src.db.schemas import (
     SourceTextCreate, 
     FlashcardCreate, 
     AiGenerationEventCreate,
+    UserFlashcardSpacedRepetitionCreate,
     FlashcardSourceEnum,
     FlashcardStatusEnum
 )
@@ -63,13 +64,20 @@ class AIService:
             llm_response = await self._generate_with_llm(request.text_content)
             logger.info(f"LLM generated {len(llm_response.flashcards)} flashcards using {llm_response.model_used}")
             
-            # Step 3: Create flashcard records with pending_review status
+            # Step 3: Create flashcard records with active status
             created_flashcards = await self._create_flashcard_records(
                 llm_suggestions=llm_response.flashcards,
                 user_id=user_id,
                 source_text_id=uuid.UUID(source_text['id'])
             )
             logger.info(f"Created {len(created_flashcards)} flashcard records")
+            
+            # Step 3.5: Create spaced repetition records for all flashcards
+            await self._create_spaced_repetition_records(
+                flashcards=created_flashcards,
+                user_id=user_id
+            )
+            logger.info(f"Created spaced repetition records for {len(created_flashcards)} flashcards")
             
             # Step 4: Create AI generation event record
             ai_event = await self._create_ai_generation_event(
@@ -119,7 +127,7 @@ class AIService:
             )
             
             result = self.supabase.table("source_texts").insert(
-                source_text_data.model_dump()
+                source_text_data.model_dump(mode='json')
             ).execute()
             
             if not result.data:
@@ -160,10 +168,10 @@ class AIService:
                     front_content=suggestion.front_content,
                     back_content=suggestion.back_content,
                     source=FlashcardSourceEnum.AI_SUGGESTION,
-                    status=FlashcardStatusEnum.PENDING_REVIEW,
+                    status=FlashcardStatusEnum.ACTIVE,
                     source_text_id=source_text_id
                 )
-                flashcard_creates.append(flashcard_data.model_dump())
+                flashcard_creates.append(flashcard_data.model_dump(mode='json'))
             
             if not flashcard_creates:
                 raise AIServiceError(
@@ -193,6 +201,54 @@ class AIService:
                 user_id=user_id
             )
     
+    async def _create_spaced_repetition_records(
+        self,
+        flashcards: List[dict],
+        user_id: uuid.UUID
+    ) -> List[dict]:
+        """Create spaced repetition records for AI-generated flashcards."""
+        try:
+            spaced_repetition_creates = []
+            
+            for flashcard in flashcards:
+                flashcard_id = flashcard["id"]
+                spaced_repetition_data = UserFlashcardSpacedRepetitionCreate(
+                    user_id=user_id,
+                    flashcard_id=uuid.UUID(flashcard_id),
+                    due_date=datetime.utcnow(),  # Ready for first review
+                    current_interval=1,
+                    last_reviewed_at=None
+                )
+                spaced_repetition_creates.append(spaced_repetition_data.model_dump(mode='json'))
+            
+            if not spaced_repetition_creates:
+                raise AIServiceError(
+                    operation="create_spaced_repetition",
+                    details="No spaced repetition records to create",
+                    user_id=user_id
+                )
+            
+            result = self.supabase.table("user_flashcard_spaced_repetition").insert(
+                spaced_repetition_creates
+            ).execute()
+            
+            if not result.data:
+                raise AIServiceError(
+                    operation="create_spaced_repetition",
+                    details="Failed to insert spaced repetition records",
+                    user_id=user_id
+                )
+            
+            return result.data
+            
+        except Exception as e:
+            logger.error(f"Database error creating spaced repetition records for user {user_id}: {str(e)}")
+            raise AIServiceError(
+                operation="create_spaced_repetition",
+                details=f"Database operation failed: {str(e)}",
+                user_id=user_id
+            )
+    
     async def _create_ai_generation_event(
         self,
         user_id: uuid.UUID,
@@ -214,7 +270,7 @@ class AIService:
             )
             
             result = self.supabase.table("ai_generation_events").insert(
-                event_data.model_dump(exclude_none=True)
+                event_data.model_dump(exclude_none=True, mode='json')
             ).execute()
             
             if not result.data:

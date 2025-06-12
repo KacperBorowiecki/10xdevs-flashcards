@@ -87,6 +87,30 @@ class SpacedRepetitionRecordResponse(UserFlashcardSpacedRepetitionBase):
     # Dziedziczy wszystkie pola z UserFlashcardSpacedRepetitionBase
     model_config = {"from_attributes": True}
 
+# --- Modele dla Dashboard ---
+
+class AIGenerationSummary(BaseModel):
+    """Podsumowanie statystyk generowania AI."""
+    total_generated: int = Field(..., ge=0, description="Łączna liczba wygenerowanych fiszek")
+    total_accepted: int = Field(..., ge=0, description="Łączna liczba zaakceptowanych fiszek")
+    
+    @property
+    def acceptance_ratio(self) -> str:
+        """Zwraca ratio w formacie 'x/y' dla wyświetlenia."""
+        return f"{self.total_accepted}/{self.total_generated}"
+
+class DashboardStats(BaseModel):
+    """Zagregowane statystyki dla Dashboard."""
+    total_flashcards: int = Field(..., ge=0, description="Łączna liczba aktywnych fiszek")
+    due_cards_today: int = Field(..., ge=0, description="Liczba fiszek do powtórki dziś")
+    ai_stats: AIGenerationSummary = Field(..., description="Podsumowanie statystyk AI")
+
+class DashboardContext(BaseModel):
+    """Główny kontekst przekazywany do template Dashboard."""
+    user_email: str = Field(..., description="Email zalogowanego użytkownika")
+    stats: DashboardStats = Field(..., description="Statystyki użytkownika")
+    error_message: Optional[str] = Field(None, description="Komunikat błędu jeśli wystąpił")
+
 # Przykładowe użycie (można usunąć lub zakomentować)
 if __name__ == "__main__":
     # Przykładowe dane dla FlashcardManualCreateRequest

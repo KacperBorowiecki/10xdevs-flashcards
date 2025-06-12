@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Response
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uuid
 import logging
-from typing import Annotated, List
+from typing import Annotated, List, Dict, Any, Optional
 from datetime import datetime
 import time
 
 from supabase import Client
 from src.db.supabase_client import get_supabase_client
 from src.services.spaced_repetition_service import SpacedRepetitionService
+from src.services.auth_service import AuthService
+from src.middleware.auth_middleware import get_current_user
 from src.api.v1.schemas.spaced_repetition_schemas import (
     SpacedRepetitionQueryParams,
     FlashcardWithRepetition,
@@ -18,52 +19,62 @@ from src.api.v1.schemas.spaced_repetition_schemas import (
 )
 
 logger = logging.getLogger(__name__)
-security = HTTPBearer()
 
 router = APIRouter(prefix="/spaced-repetition", tags=["spaced-repetition"])
 
-async def get_current_user_id(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    supabase: Annotated[Client, Depends(get_supabase_client)]
+async def require_auth_for_api(
+    request: Request,
+    current_user: Optional[Dict[str, Any]] = Depends(get_current_user)
 ) -> uuid.UUID:
     """
-    Extract and validate user_id from JWT token.
+    Dependency that requires authentication for API endpoints and returns user UUID.
+    Uses session-based authentication consistent with other parts of the application.
     
     Args:
-        credentials: JWT token from Authorization header
-        supabase: Supabase client instance
+        request: FastAPI request object
+        current_user: Current user data from middleware
         
     Returns:
-        User UUID from validated token
+        User UUID from authenticated session
         
     Raises:
-        HTTPException: If token is invalid or user not found
+        HTTPException: If user is not authenticated
     """
-    try:
-        # Get user from Supabase using the JWT token
-        user_response = supabase.auth.get_user(credentials.credentials)
-        
-        if not user_response.user:
+    if not current_user:
+        # Check if user is authenticated via cookie (fallback)
+        if not AuthService.is_authenticated(request):
+            logger.info("Unauthenticated API request for spaced repetition")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Authentication required"
             )
         
-        return uuid.UUID(user_response.user.id)
+        # Get user data from auth cookie (fallback)
+        auth_data = AuthService.get_auth_data(request)
+        if not auth_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required"
+            )
+        
+        user_id_str = auth_data.get('user_id')
+    else:
+        user_id_str = current_user.get('id')
     
-    except ValueError:
+    if not user_id_str:
+        logger.error("User ID not found in authentication data")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user ID format",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid authentication data"
         )
-    except Exception as e:
-        logger.error(f"Authentication error: {str(e)}")
+    
+    try:
+        return uuid.UUID(str(user_id_str))
+    except ValueError:
+        logger.error(f"Invalid user ID format: {user_id_str}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid user ID format"
         )
 
 def get_spaced_repetition_service(
@@ -142,7 +153,7 @@ def _validate_request_headers(request: Request) -> None:
 async def get_due_flashcards(
     request: Request,
     response: Response,
-    current_user_id: Annotated[uuid.UUID, Depends(get_current_user_id)],
+    current_user_id: Annotated[uuid.UUID, Depends(require_auth_for_api)],
     spaced_repetition_service: Annotated[SpacedRepetitionService, Depends(get_spaced_repetition_service)],
     limit: int = Query(
         default=20,
@@ -341,7 +352,7 @@ async def submit_flashcard_review(
     request: Request,
     response: Response,
     review_request: SpacedRepetitionReviewRequest,
-    current_user_id: Annotated[uuid.UUID, Depends(get_current_user_id)],
+    current_user_id: Annotated[uuid.UUID, Depends(require_auth_for_api)],
     spaced_repetition_service: Annotated[SpacedRepetitionService, Depends(get_spaced_repetition_service)]
 ) -> SpacedRepetitionReviewResponse:
     """

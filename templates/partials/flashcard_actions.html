@@ -1,0 +1,148 @@
+<!-- Flashcard Actions Component -->
+<div class="relative inline-block text-left">
+    <div>
+        <button 
+            type="button" 
+            class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            id="flashcard-menu-{{ flashcard.id }}"
+            onclick="toggleActionsMenu('{{ flashcard.id }}')"
+            aria-expanded="false"
+            aria-haspopup="true"
+        >
+            <span class="sr-only">Opcje fiszki</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <div 
+        id="flashcard-actions-{{ flashcard.id }}"
+        class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        role="menu"
+        aria-orientation="vertical"
+        aria-labelledby="flashcard-menu-{{ flashcard.id }}"
+    >
+        <div class="py-1" role="none">
+            <!-- Edit Action -->
+            <button
+                type="button"
+                class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                role="menuitem"
+                onclick="editFlashcard('{{ flashcard.id }}')"
+            >
+                <svg class="w-4 h-4 mr-3 text-gray-400 group-hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+                Edytuj
+            </button>
+            
+            <!-- Delete Action -->
+            <button
+                type="button"
+                class="group flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-900"
+                role="menuitem"
+                onclick="deleteFlashcard('{{ flashcard.id }}')"
+            >
+                <svg class="w-4 h-4 mr-3 text-red-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Usuń
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle actions menu
+    function toggleActionsMenu(flashcardId) {
+        const menu = document.getElementById(`flashcard-actions-${flashcardId}`);
+        const button = document.getElementById(`flashcard-menu-${flashcardId}`);
+        
+        if (menu && button) {
+            const isHidden = menu.classList.contains('hidden');
+            
+            // Close all other open menus first
+            document.querySelectorAll('[id^="flashcard-actions-"]').forEach(otherMenu => {
+                if (otherMenu !== menu) {
+                    otherMenu.classList.add('hidden');
+                }
+            });
+            
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                button.setAttribute('aria-expanded', 'true');
+            } else {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        }
+    }
+    
+    // Edit flashcard
+    function editFlashcard(flashcardId) {
+        // Close menu
+        toggleActionsMenu(flashcardId);
+        
+        // Find flashcard data from the page
+        const flashcardData = getFlashcardDataById(flashcardId);
+        if (flashcardData) {
+            // Set global state
+            flashcardsPageState.currentFlashcard = flashcardData;
+            
+            // Populate edit modal with data
+            populateEditModal(flashcardData);
+            
+            // Open edit modal
+            openModal('editFlashcardModal');
+        }
+    }
+    
+    // Delete flashcard
+    function deleteFlashcard(flashcardId) {
+        // Close menu
+        toggleActionsMenu(flashcardId);
+        
+        // Find flashcard data from the page
+        const flashcardData = getFlashcardDataById(flashcardId);
+        if (flashcardData) {
+            // Set global state
+            flashcardsPageState.currentFlashcard = flashcardData;
+            
+            // Populate delete confirmation modal
+            populateDeleteModal(flashcardData);
+            
+            // Open delete confirmation modal
+            openModal('confirmDeleteModal');
+        }
+    }
+    
+    // Helper function to get flashcard data by ID from DOM
+    function getFlashcardDataById(flashcardId) {
+        // This is a simplified version - in real implementation you might pass data differently
+        const frontElement = document.getElementById(`front-${flashcardId}`);
+        const backElement = document.getElementById(`back-${flashcardId}`);
+        
+        if (frontElement && backElement) {
+            return {
+                id: flashcardId,
+                front_content: frontElement.textContent.trim().replace('pokaż więcej', '').replace('pokaż mniej', ''),
+                back_content: backElement.querySelector('p')?.textContent.trim() || ''
+            };
+        }
+        return null;
+    }
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[id^="flashcard-menu-"]') && !event.target.closest('[id^="flashcard-actions-"]')) {
+            document.querySelectorAll('[id^="flashcard-actions-"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+            document.querySelectorAll('[id^="flashcard-menu-"]').forEach(button => {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+</script> 

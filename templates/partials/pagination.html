@@ -1,0 +1,136 @@
+<!-- Pagination Component -->
+<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow-sm">
+    <!-- Mobile View -->
+    <div class="flex-1 flex justify-between sm:hidden">
+        {% if current_filter.page > 1 %}
+        <a 
+            href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ current_filter.page - 1 }}"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+            Poprzednia
+        </a>
+        {% else %}
+        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+            Poprzednia
+        </span>
+        {% endif %}
+
+        {% if current_filter.page < flashcards.pages %}
+        <a 
+            href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ current_filter.page + 1 }}"
+            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+            Następna
+        </a>
+        {% else %}
+        <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+            Następna
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Desktop View -->
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                Wyniki
+                <span class="font-medium">{{ ((current_filter.page - 1) * current_filter.size) + 1 }}</span>
+                -
+                <span class="font-medium">{{ [current_filter.page * current_filter.size, flashcards.total]|min }}</span>
+                z
+                <span class="font-medium">{{ flashcards.total }}</span>
+            </p>
+        </div>
+        
+        <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <!-- Previous Button -->
+                {% if current_filter.page > 1 %}
+                <a 
+                    href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ current_filter.page - 1 }}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                    <span class="sr-only">Poprzednia</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <span class="sr-only">Poprzednia</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </span>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                {% set start_page = [1, current_filter.page - 2]|max %}
+                {% set end_page = [flashcards.pages, current_filter.page + 2]|min %}
+
+                {% if start_page > 1 %}
+                <a 
+                    href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    1
+                </a>
+                {% if start_page > 2 %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    ...
+                </span>
+                {% endif %}
+                {% endif %}
+
+                {% for page_num in range(start_page, end_page + 1) %}
+                {% if page_num == current_filter.page %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                    {{ page_num }}
+                </span>
+                {% else %}
+                <a 
+                    href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    {{ page_num }}
+                </a>
+                {% endif %}
+                {% endfor %}
+
+                {% if end_page < flashcards.pages %}
+                {% if end_page < flashcards.pages - 1 %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    ...
+                </span>
+                {% endif %}
+                <a 
+                    href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ flashcards.pages }}"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    {{ flashcards.pages }}
+                </a>
+                {% endif %}
+
+                <!-- Next Button -->
+                {% if current_filter.page < flashcards.pages %}
+                <a 
+                    href="?{% for key, value in request.query_params.items() %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ current_filter.page + 1 }}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                    <span class="sr-only">Następna</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <span class="sr-only">Następna</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div> 

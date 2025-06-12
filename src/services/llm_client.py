@@ -131,6 +131,9 @@ Respond ONLY with valid JSON. Do not include any other text or explanations.
                 )
             
             logger.debug(f"Raw LLM response: {content[:200]}...")
+
+            # Replace to meet the JSON format requirements
+            content = content.replace("```json", "").replace("```", "")
             
             # Parse the JSON response
             try:
